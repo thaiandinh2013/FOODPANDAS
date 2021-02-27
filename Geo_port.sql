@@ -9,33 +9,36 @@ set  SG_port_latitude = (SELECT port_latitude from   `bigquery-public-data.geo_i
 set  SG_port_longitude= (SELECT port_longitude from  `bigquery-public-data.geo_international_ports.world_port_index` where
         country = 'SG'
         and  port_name = 'JURONG ISLAND');
-with distance_to_SG as (
-SELECT
-  index_number,
-  port_name,
-  region_number,
-  ST_DISTANCE(
-    ST_GEOGPOINT(port_longitude,port_latitude),
-    ST_GEOGPOINT(SG_port_longitude,SG_port_latitude )) distance
-FROM
-`bigquery-public-data.geo_international_ports.world_port_index`
-)
+create table  foodpandas.q1 as
 select
     port_name,
     distance
 from
-(select
-    port_name,
-    distance,
-    row_number()  over  ( order by distance asc) rank_
- from
-    distance_to_SG ) t
+(   select
+        port_name,
+        distance,
+        row_number()  over  ( order by distance asc) rank_
+
+    from
+        (
+        SELECT
+        index_number,
+        port_name,
+        region_number,
+        ST_DISTANCE(
+            ST_GEOGPOINT(port_longitude,port_latitude),
+            ST_GEOGPOINT(SG_port_longitude,SG_port_latitude )
+            ) distance
+        FROM
+        `bigquery-public-data.geo_international_ports.world_port_index`
+        ) t
+) t1
 where
   rank_ <=6 and
-  distance >0
-
+  distance >0;
 ------------------------------------------
 -- Question 2
+create table if not exists foodpandas.q2 as
 select
    country,
    count(*) port_count
@@ -51,6 +54,8 @@ limit 1 ;
 ------------------------------------------
 
 -- Question 3
+
+create table if not exists foodpandas.q3 as
 select
   country,
   port_name,
